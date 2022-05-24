@@ -1,0 +1,101 @@
+select *
+    from kitko.s_krajina;
+    
+select *
+    from kitko.s_kraj;    
+    
+select *
+    from kitko.s_okres;  
+    
+select *
+    from kitko.s_obec; 
+    
+select *
+    from kitko.s_adresa; 
+    
+select * 
+    from kitko.s_osoba;    
+    
+select * 
+    from kitko.s_zamestnanec; 
+    
+select * 
+    from kitko.s_chovna_stanica;
+    
+select * 
+    from KITKO.s_evidencia_zvierat; 
+    
+select * 
+    from KITKO.s_transakcia; 
+    
+select * 
+    from KITKO.s_zviera; 
+    
+select * 
+    from KITKO.s_zakaznik; 
+    
+select * 
+    from KITKO.s_dodavatel; 
+    
+select * 
+    from KITKO.s_druh_zviera;    
+    
+-- ULOHA 1.   
+select druh_zviera, plemeno, pohlavie
+            from kitko.s_chovna_stanica sch JOIN kitko.s_evidencia_zvierat evz USING(id_pobocky)
+                                  JOIN kitko.s_zviera svz ON evz.id_zviera = svz.id_zviera
+                                  JOIN kitko.s_druh_zviera dvz ON svz.id_plemeno = dvz.id_plemeno
+            where id_pobocky = '&id_pobocky';  
+            
+-- ULOHA 3.   
+select id_evidencia, plemeno, pohlavie
+            from kitko.s_evidencia_zvierat evz JOIN kitko.s_zviera svz ON evz.id_zviera = svz.id_zviera
+                                               JOIN kitko.s_druh_zviera dvz ON svz.id_plemeno = dvz.id_plemeno
+            where druh_zviera = 'PES';   
+            
+            
+-- ULOHA 5.   
+select id_zviera, id_plemeno
+    from kitko.s_zviera
+    where id_otca in (select id_zviera 
+                      from kitko.s_zviera 
+                      where id_plemeno not in (select id_plemeno 
+                                               from kitko.s_zviera))
+    OR id_matky in (select id_zviera 
+                      from kitko.s_zviera 
+                      where id_plemeno not in (select id_plemeno 
+                                               from kitko.s_zviera)) ;                     
+    
+    
+    
+-- ULOHA 1.
+create or replace procedure p_vrat_vsetky_zvierata_danej_chovnejStanice
+    (id_pobocka_IN INTEGER, id_pobocky_OUT OUT INTEGER, druh_zviera_OUT OUT VARCHAR, plemeno_OUT OUT VARCHAR, pohlavie_OUT OUT CHAR)
+    is
+    begin
+        select id_pobocky, druh_zviera, plemeno, pohlavie
+        INTO id_pobocky_OUT, druh_zviera_OUT, plemeno_OUT, pohlavie_OUT
+            from kitko.s_chovna_stanica sch JOIN kitko.s_evidencia_zvierat evz USING(id_pobocky)
+                                  JOIN kitko.s_zviera svz ON evz.id_zviera = svz.id_zviera
+                                  JOIN kitko.s_druh_zviera dvz ON svz.id_plemeno = dvz.id_plemeno
+            where id_pobocky = id_pobocka_IN;
+                            
+        EXCEPTION 
+        when no_data_found 
+        then raise_application_error(-20555, 'Dana pobocka neexituje');
+        
+    end;
+    /
+    
+declare
+
+    id_pobocky_IN kitko.s_chovna_stanica.id_pobocky % TYPE;
+    druh_zviera_IN kitko.s_druh_zviera.druh_zviera % TYPE;
+    plemeno_IN kitko.s_druh_zviera.plemeno % TYPE;
+    pohlavie_zviera_IN kitko.s_zviera.pohlavie % TYPE;
+    
+    begin
+        p_vrat_vsetky_zvierata_danej_chovnejStanice(100001, id_pobocky_IN, druh_zviera_IN, plemeno_IN, pohlavie_zviera_IN);
+        dbms_output.put_line(id_pobocky_IN || druh_zviera_IN || plemeno_IN || pohlavie_zviera_IN);
+    end;
+    /

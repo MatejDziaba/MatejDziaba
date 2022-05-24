@@ -1,0 +1,135 @@
+--TRIGGER 1 DELETE -- vytvorena     
+create or replace trigger tr_Zrus_chovna_stanica  
+BEFORE DELETE on kitko.s_chovna_stanica
+for each ROW
+DECLARE 
+    PRAGMA AUTONOMOUS_TRANSACTIONS;
+begin
+    delete from kitko.s_evidencia_zvierat
+        where id_pobocky IN (select id_pobocky from kitko.s_chovna_stanica);
+    delete from kitko.s_zamestnanec
+        where id_pobocky IN (select id_pobocky from kitko.s_chovna_stanica);
+    COMMIT;
+end;
+/
+
+--TRIGGER 2 DELETE -- vytvorena    
+create or replace trigger tr_Zrus_osoba 
+BEFORE DELETE on kitko.s_osoba
+for each ROW
+
+begin
+    delete from kitko.s_zamestanec
+        where rod_cislo IN (select rod_cislo from kitko.s_osoba);
+    delete from kitko.s_zakaznik
+        where rod_cislo IN (select rod_cislo from kitko.s_osoba);
+end;
+/
+
+
+--TRIGGER 3 DELETE -- vytvorena    
+create or replace trigger tr_Zrus_adresa 
+BEFORE DELETE on kitko.s_adresa
+for each ROW
+
+begin
+    delete from kitko.s_chovna_stanica
+        where id_adresa IN (select id_adresa from kitko.s_adresa);
+end;
+/
+
+
+--TRIGGER 4 DELETE -- vytvorena    
+create or replace trigger tr_Zrus_obec
+BEFORE DELETE on kitko.s_obec
+for each ROW
+
+begin
+    delete from kitko.s_adresa
+        where PSC IN (select PSC from kitko.s_obec);
+end;
+/
+
+--TRIGGER 5 DELETE -- vytvorena    
+create or replace trigger tr_Zrus_okres
+BEFORE DELETE on kitko.s_okres
+for each ROW
+
+begin
+    delete from kitko.s_obec
+        where id_okres IN (select id_okres from kitko.s_okres);
+end;
+/
+
+--TRIGGER 6 DELETE -- vytvorena    
+create or replace trigger tr_Zrus_kraj
+BEFORE DELETE on kitko.s_kraj
+for each ROW
+
+begin
+    delete from kitko.s_okres
+        where id_kraj IN (select id_kraj from kitko.s_kraj);    
+end;
+/
+
+--TRIGGER 7 DELETE -- vytvorena    
+create or replace trigger tr_Zrus_krajina
+BEFORE DELETE on kitko.s_krajina
+for each ROW
+
+begin                            -- zavola trigger tr_Zrus_kraj, tr_Zrus_okres, tr_Zrus_obec, 
+    delete from kitko.s_kraj     --tr_Zrus_adresa, tr_Zrus_osoba, tr_Zrus_chovna_stanica
+        where id_krajina IN (select id_krajina from kitko.s_krajina); 
+end;
+/
+
+
+--TRIGGER 8 UPDATE -- vytvorena
+create or replace trigger tr_Uprav_osoba
+BEFORE UPDATE on kitko.s_osoba
+    for each ROW
+    
+    begin
+        UPDATE s_zakaznik
+            set kitko.rod_cislo = :new.rod_cislo
+                where rod_cislo = :old.rod_cislo;
+        UPDATE kitko.s_zamestnanec
+            set rod_cislo = :new.rod_cislo
+                where rod_cislo = :old.rod_cislo;                
+        
+    end;
+    /
+    
+--TRIGGER 9 UPDATE -- vytvorena   
+create or replace trigger tr_Uprav_s_adresa
+BEFORE UPDATE on kitko.s_adresa
+    for each ROW
+    
+    begin
+        UPDATE kitko.s_osoba
+            set id_adresa = :new.id_adresa
+                where id_adresa = :old.id_adresa;
+        UPDATE kitko.s_chovna_stanica
+            set id_adresa = :new.id_adresa
+                where id_adresa = :old.id_adresa;                
+        
+    end;
+    /
+        
+    
+    
+--TRIGGER 10 UPDATE -- vytvorena    
+create or replace trigger tr_Uprav_chovna_stanica
+BEFORE UPDATE on kitko.s_chovna_stanica
+    for each ROW
+    
+    begin
+        UPDATE kitko.s_evidencia_zvierat
+            set id_pobocoky = :new.id_pobocoky
+                where id_pobocoky = :old.id_pobocoky;
+        UPDATE kitko.s_zamestnanec
+            set id_pobocoky = :new.id_pobocoky
+                where id_pobocoky = :old.id_pobocoky;                
+        
+    end;
+    /    

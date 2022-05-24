@@ -1,0 +1,444 @@
+-- PROCEDURE OSOBA INSERT 1 
+create or replace procedure pr_Vloz_osobu
+(rod_cislo_IN CHAR, id_adresa_IN INTEGER, meno_IN VARCHAR, priezvisko_IN VARCHAR)
+    is
+    begin
+        INSERT INTO kitko.s_osoba(rod_cislo, id_adresa, meno, priezvisko)
+            VALUES(rod_cislo_IN, id_adresa_IN, meno_IN, priezvisko_IN);
+
+
+    EXCEPTION
+          WHEN OTHERS THEN
+            raise_application_error(-20555, 'Zle zadany vstupny paramater alebo dana osoba uz existuje');
+    end;
+    /
+
+-- PROCEDURE ZAMESTANEC INSERT 2 
+create or replace procedure pr_Vloz_zamestanca_x1_notKnown
+(rod_cislo_IN CHAR, id_adresa_IN INTEGER, meno_IN VARCHAR, priezvisko_IN VARCHAR, id_pobocky_IN INTEGER, zamestnany_od_IN DATE)
+    is
+        os_cislo_IN INTEGER;
+    begin
+        INSERT INTO kitko.s_osoba(rod_cislo, id_adresa, meno, priezvisko)
+            VALUES(rod_cislo_IN, id_adresa_IN, meno_IN, priezvisko_IN);
+
+        select sekv_zamestnanec_id.NEXTVAL
+        INTO os_cislo_IN
+        from dual;
+
+        INSERT INTO kitko.s_zamestnanec(os_cislo, rod_cislo, id_pobocky, zamestnany_od, zamestnany_do)   
+            VALUES(os_cislo_IN, rod_cislo_IN, id_pobocky_IN, zamestnany_od_IN, null);
+
+    EXCEPTION
+          WHEN OTHERS THEN
+            raise_application_error(-20555, 'Zle zadany vstupny paramater alebo dany zamestnanec uz existuje');            
+    end;
+
+-- PROCEDURE ZAMESTANEC INSERT 3  
+create or replace procedure pr_Vloz_zamestanca_x2_Known
+(rod_cislo_IN INTEGER, id_pobocky_IN INTEGER, zamestnany_od_IN DATE)
+    is
+        os_cislo_IN INTEGER;
+    begin
+        select sekv_zamestnanec_id.NEXTVAL
+        INTO os_cislo_IN
+        from dual;
+
+        INSERT INTO kitko.s_zamestnanec(os_cislo, rod_cislo, id_pobocky, zamestnany_od, zamestnany_do)   
+            VALUES(os_cislo_IN, rod_cislo_IN, id_pobocky_IN, zamestnany_od_IN, null);
+
+    EXCEPTION
+          WHEN OTHERS THEN
+            raise_application_error(-20555, 'Zle zadany vstupny paramater alebo dany zamestnanec uz existuje');            
+    end;    
+    /
+
+
+
+-- PROCEDURE CHOVNA STANICA INSERT 4 
+create or replace procedure pr_Vloz_chovnu_stanicu
+(id_adresa_IN INTEGER, kapacita_IN INTEGER, typ_zariadenia_IN CHAR)
+    is
+        id_pobocky_IN INTEGER;
+    begin
+        select sekv_chovna_stanica_id.NEXTVAL
+        INTO id_pobocky_IN
+        from dual;
+    
+        INSERT INTO kitko.s_chovna_stanica(id_pobocky, id_adresa, kapacita, typ_zariadenia)
+            VALUES(id_pobocky_IN, id_adresa_IN, kapacita_IN, typ_zariadenia_IN);
+
+    EXCEPTION
+          WHEN OTHERS THEN
+            raise_application_error(-20555, 'Zle zadany vstupny paramater alebo dana chovna stanica uz existuje');            
+    end;  
+    /
+    
+
+    
+    
+-- PROCEDURE ZAKAZNIK INSERT 5 
+create SEQUENCE sekv_zakaznik_id
+    start with 200000 increment by 1;
+    
+create or replace procedure pr_Vloz_zakaznik
+(rod_cislo_IN CHAR)
+    is
+        id_zakaznika_IN INTEGER;
+        rod_cislo_osoba CHAR;
+    begin
+        select sekv_zakaznik_id.NEXTVAL
+        INTO id_zakaznika_IN
+        from dual;
+        IF rod_cislo_IN = null THEN                
+            INSERT INTO kitko.s_zakaznik(id_zakaznika, rod_cislo)
+                VALUES(id_zakaznika_IN, rod_cislo_IN);
+        ELSE 
+            select rod_cislo
+                INTO rod_cislo_osoba
+                    from kitko.s_osoba
+                        where rod_cislo = rod_cislo_IN;
+            INSERT INTO kitko.s_zakaznik(id_zakaznika, rod_cislo)
+                VALUES(id_zakaznika_IN, rod_cislo_osoba);
+        END IF;
+    EXCEPTION
+          WHEN OTHERS THEN
+            raise_application_error(-20555, 'Zle zadany vstupny paramater alebo dana zakaznik uz existuje');            
+    end;  
+    /
+    
+    
+-- PROCEDURE KRAJINA INSERT 6  
+create or replace procedure pr_Vloz_krajina
+(id_krajina_IN CHAR, n_krajina_IN VARCHAR)
+    is
+    begin
+        INSERT INTO kitko.s_krajina(id_krajina, n_krajina)
+            VALUES(id_krajina_IN, n_krajina_IN);
+        
+    EXCEPTION
+          WHEN OTHERS THEN
+            raise_application_error(-20555, 'Zle zadany vstupny paramater alebo dana krajina uz existuje');            
+    end;  
+    /    
+    
+    
+    
+-- PROCEDURE KRAJ INSERT 7 
+create or replace procedure pr_Vloz_kraj
+(id_kraj_IN CHAR, id_krajina_IN CHAR, n_krajina_IN VARCHAR)
+    is
+    begin
+        INSERT INTO kitko.s_kraj(id_kraj, id_krajina, n_kraj)
+            VALUES(id_kraj_IN, id_krajina_IN, n_krajina_IN);
+        
+    EXCEPTION
+          WHEN OTHERS THEN
+            raise_application_error(-20555, 'Zle zadany vstupny paramater alebo dany kraj v krajine uz existuje');            
+    end;  
+    /  
+    
+-- PROCEDURE OKRES INSERT  8    
+create or replace procedure pr_Vloz_okres
+(id_okres_IN CHAR, id_kraj_IN CHAR, n_okres_IN VARCHAR)
+    is
+    begin
+        INSERT INTO kitko.s_okres(id_okres, id_kraj, n_okres)
+            VALUES(id_okres_IN, id_kraj_IN, n_okres_IN);
+        
+    EXCEPTION
+          WHEN OTHERS THEN
+            raise_application_error(-20555, 'Zle zadany vstupny paramater alebo dany okres sa v kraji uz vykystuje');            
+    end;  
+    /    
+    
+    
+    
+-- PROCEDURE OBEC INSERT  9    
+create or replace procedure pr_Vloz_obec
+(PSC_IN CHAR, id_okres_IN CHAR, n_obec_IN VARCHAR)
+    is
+    begin
+        INSERT INTO kitko.s_obec(PSC, id_okres, obec)
+            VALUES(PSC_IN, id_okres_IN, n_obec_IN);
+        
+    EXCEPTION
+          WHEN OTHERS THEN
+            raise_application_error(-20555, 'Zle zadany vstupny paramater alebo dana obec sa v okrese uz vyskytuje');            
+    end;  
+    /     
+    
+
+    
+--PROCEDURE 10 UPDATE
+create or replace procedure pr_Uprav_krajinu
+(id_krajina_OLD_IN CHAR, id_krajina_NEW_IN CHAR, n_krajina_OLD_IN VARCHAR, n_krajina_NEW_IN VARCHAR)
+    is
+    begin
+        IF n_krajina_NEW_IN <> NULL then
+        UPDATE kitko.s_krajina
+            set n_krajina = n_krajina_NEW_IN
+            where n_krajina = n_krajina_OLD_IN;
+        END IF;
+        
+        IF id_krajina_NEW_IN <> NULL then
+        UPDATE kitko.s_krajina
+            set id_krajina = id_krajina_NEW_IN
+            where id_krajina = id_krajina_OLD_IN;
+        END IF;
+        
+             
+    EXCEPTION
+          WHEN OTHERS THEN
+            raise_application_error(-20555, 'Zle zadany 1. alebo 3. vstupny paramater alebo dana krajina neexituje');            
+    end;  
+    /      
+    
+  
+  
+ --PROCEDURE 11 UPDATE 
+create or replace procedure pr_Uprav_kraj
+(n_kraj_OLD_IN VARCHAR, n_kraj_NEW_IN VARCHAR)
+    is
+    begin
+        IF n_kraj_OLD_IN <> NULL then
+        UPDATE kitko.s_kraj
+            set n_kraj = n_kraj_NEW_IN
+            where n_kraj = n_kraj_OLD_IN;
+        END IF;
+        
+        
+    EXCEPTION
+          WHEN OTHERS THEN
+            raise_application_error(-20555, 'Zle zadany 1. alebo 2. vstupny paramater alebo dany kraj neexituje');            
+    end;  
+    /     
+    
+    
+    
+--PROCEDURE 12 UPDATE 
+create or replace procedure pr_Uprav_okre
+(n_okres_OLD_IN VARCHAR, n_okres_NEW_IN VARCHAR)
+    is
+    begin
+        IF n_okres_OLD_IN <> NULL then
+        UPDATE kitko.s_okres
+            set n_okres = n_okres_NEW_IN
+            where n_okres = n_okres_OLD_IN;
+        END IF;
+        
+        
+    EXCEPTION
+          WHEN OTHERS THEN
+            raise_application_error(-20555, 'Zle zadany 1. alebo 2. vstupny paramater alebo dany okres neexituje');            
+    end;  
+    /     
+    
+    
+    
+    
+--PROCEDURE 13 UPDATE 
+create or replace procedure pr_Uprav_obec
+(n_obec_OLD_IN VARCHAR, n_obec_NEW_IN VARCHAR)
+    is
+    begin
+        IF n_obec_OLD_IN <> NULL then
+        UPDATE kitko.s_obec
+            set obec = n_obec_NEW_IN
+            where obec = n_obec_OLD_IN;
+        END IF;
+        
+        
+    EXCEPTION
+          WHEN OTHERS THEN
+            raise_application_error(-20555, 'Zle zadany 1. alebo 2. vstupny paramater alebo dana obec neexituje');            
+    end;  
+    /    
+    
+    
+    
+--PROCEDURE 14 UPDATE 
+create or replace procedure pr_Uprav_adresa
+(n_ulica_OLD_IN VARCHAR, n_ulica_NEW_IN VARCHAR)
+    is
+    begin
+        IF n_ulica_OLD_IN <> NULL then
+        UPDATE kitko.s_adresa
+            set ulica = n_ulica_NEW_IN
+            where ulica = n_ulica_OLD_IN;
+        END IF;
+        
+        
+    EXCEPTION
+          WHEN OTHERS THEN
+            raise_application_error(-20555, 'Zle zadany 1. alebo 2. vstupny paramater alebo dana adresa neexituje');            
+    end;  
+    /    
+    
+    
+    
+--PROCEDURE 15 UPDATE 
+create or replace procedure pr_Uprav_osoba
+(rod_cislo_OLD_IN CHAR, rod_cislo_NEW_IN CHAR, id_adresa_OLD_IN INTEGER, id_adresa_NEW_IN INTEGER,
+ meno_OLD_IN VARCHAR, meno_NEW_IN VARCHAR, priezvisko_OLD_IN VARCHAR, priezvisko_NEW_IN VARCHAR)
+    is
+    begin
+        IF meno_NEW_IN <> NULL then
+        UPDATE kitko.s_osoba
+            set meno = meno_NEW_IN
+            where meno = meno_OLD_IN;
+        END IF;
+        
+        IF priezvisko_NEW_IN <> NULL then
+        UPDATE kitko.s_osoba
+            set priezvisko = priezvisko_NEW_IN
+            where priezvisko = priezvisko_OLD_IN;
+        END IF;
+        
+        --meno
+        IF meno_OLD_IN <> NULL AND priezvisko_OLD_IN <> NULL then
+        UPDATE kitko.s_osoba
+            set meno = meno_NEW_IN
+            where meno = meno_OLD_IN;
+        --priezvisko
+        UPDATE kitko.s_osoba
+            set priezvisko = priezvisko_NEW_IN
+            where priezvisko = priezvisko_OLD_IN;                                
+        END IF;
+        
+        IF rod_cislo_NEW_IN <> null AND id_adresa_NEW_IN <> null
+        THEN
+        -- rod_cislo
+        UPDATE kitko.s_osoba
+            set rod_cislo = rod_cislo_NEW_IN
+            where rod_cislo = rod_cislo_OLD_IN;
+        -- id_adresa                              
+        UPDATE kitko.s_osoba
+            set id_adresa = id_adresa_NEW_IN
+            where id_adresa = id_adresa_OLD_IN;
+        END IF;                                
+        
+    EXCEPTION
+          WHEN OTHERS THEN
+            raise_application_error(-20555, 'Zle zadany 1. alebo 3. vstupny paramater alebo dana osoba neexituje');            
+    end;  
+    /      
+    
+    
+--PROCEDURE 16 UPDATE -- vytvorena   
+create or replace procedure pr_Uprav_zamestnanec
+(os_cislo_OLD_IN INTEGER, os_cislo_NEW_IN INTEGER, rod_cislo_OLD_IN CHAR, rod_cislo_NEW_IN CHAR, id_pobocky_OLD_IN INTEGER, id_pobocky_NEW_IN INTEGER,
+    zamestnany_od_OLD_IN DATE, zamestnany_od_NEW_IN DATE, zamestnany_do_OLD_IN DATE, zamestnany_do_NEW_IN DATE)
+    is
+    begin
+        -- UPDATE zamestnany_od
+        IF zamestnany_od_NEW_IN <> NULL then
+        UPDATE kitko.s_zamestnanec
+            set zamestnany_od = zamestnany_od_NEW_IN
+            where zamestnany_od = zamestnany_od_OLD_IN;
+        END IF;
+        
+        -- UPDATE zamestnany_do
+        IF zamestnany_do_NEW_IN <> NULL then
+        UPDATE kitko.s_zamestnanec
+            set zamestnany_do = zamestnany_do_NEW_IN
+            where zamestnany_do = zamestnany_do_OLD_IN;
+        END IF;
+        
+        -- UPDATE os_cislo
+        IF os_cislo_NEW_IN <> null then
+            UPDATE kitko.s_zamestnanec
+            set os_cislo = os_cislo_NEW_IN
+            where os_cislo = os_cislo_OLD_IN;
+        END IF;
+        
+        -- UPDATE rod_cislo
+        IF rod_cislo_NEW_IN <> null then
+            UPDATE kitko.s_zamestnanec
+            set rod_cislo = rod_cislo_NEW_IN
+            where rod_cislo = rod_cislo_OLD_IN;
+        END IF;
+        
+        -- UPDATE id_pobocky
+        IF id_pobocky_NEW_IN <> null then
+            UPDATE kitko.s_zamestnanec
+            set id_pobocky = id_pobocky_NEW_IN
+            where id_pobocky = id_pobocky_OLD_IN;
+        END IF;
+        
+    EXCEPTION
+          WHEN OTHERS THEN
+            raise_application_error(-20555, 'Zle zadany 1. alebo 2. vstupny paramater alebo dana adresa neexituje');            
+    end;  
+    /   
+    
+    
+--PROCEDURE 17 UPDATE -- vytvorena   
+create or replace procedure pr_Uprav_chovna_stanica
+(id_pobocky_NEW_IN INTEGER, id_pobocky_OLD_IN INTEGER, id_adresa_NEW_IN INTEGER, id_adresa_OLD_IN INTEGER, 
+ kapacita_OLD_IN INTEGER, kapacita_NEW_IN INTEGER, typ_zariadenia_OLD_IN CHAR, typ_zariadenia_NEW_IN CHAR)
+    is
+    begin
+        -- UPDATE kapacita
+        IF kapacita_NEW_IN <> NULL then
+        UPDATE kitko.s_chovna_stanica
+            set kapacita = kapacita_NEW_IN   
+            where kapacita = kapacita_OLD_IN;
+        END IF;
+        
+        -- UPDATE typ_zariadenia
+        IF typ_zariadenia_NEW_IN <> NULL then
+        UPDATE kitko.s_chovna_stanica
+            set typ_zariadenia = typ_zariadenia_NEW_IN
+            where typ_zariadenia = typ_zariadenia_OLD_IN;
+        END IF;
+        
+        -- UPDATE id_pobocky
+        IF id_pobocky_NEW_IN <> NULL then
+        UPDATE kitko.s_chovna_stanica
+            set id_pobocky = id_pobocky_NEW_IN
+            where id_pobocky = id_pobocky_OLD_IN;
+        END IF;
+        
+        -- UPDATE id_adresa
+        IF id_adresa_NEW_IN <> NULL then
+        UPDATE kitko.s_chovna_stanica
+            set id_adresa = id_adresa_NEW_IN
+            where id_adresa = id_adresa_OLD_IN;
+        END IF;
+        
+        
+    EXCEPTION
+          WHEN OTHERS THEN
+            raise_application_error(-20555, 'Zle zadany 1. alebo 2. vstupny paramater alebo dana adresa neexituje');            
+    end;  
+    /    
+    
+    
+    
+--PROCEDURE 18 DELETE -- vytvorena   
+create or replace procedure pr_UpravZrus_chovna_stanica
+(id_pobocky_IN INTEGER)
+    is
+        id_pobocky_Tabulka INTEGER;
+    begin
+    
+        select chs.id_pobocky
+        INTO id_pobocky_Tabulka 
+        from kitko.s_chovna_stanica chs JOIN kitko.s_evidencia_zvierat svz ON(chs.id_pobocky = svz.id_pobocky)
+                                        JOIN kitko.s_zamestnanec zms ON (chs.id_pobocky = zms.id_pobocky)-- vyberiem id_pobocky z databazy
+        where id_pobocky_IN = chs.id_pobocky;
+    
+        IF id_pobocky_Tabulka <> null THEN
+        delete from kitko.s_chovna_stanica
+            where id_pobocky = id_pobocky_Tabulka;
+        END IF;
+    
+    EXCEPTION
+          WHEN OTHERS THEN
+            raise_application_error(-20555, 'Zle zadany 1. paramater alebo dana chovna stanica neexituje');            
+    end;  
+    /    
+
+
+    

@@ -1,28 +1,204 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<module type="JAVA_MODULE" version="4">
-  <component name="NewModuleRootManager" inherit-compiler-output="true">
-    <exclude-output />
-    <content url="file://$MODULE_DIR$">
-      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/tests" isTestSource="true" />
-    </content>
-    <orderEntry type="inheritedJdk" />
-    <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module-library" scope="TEST">
-      <library name="JUnit5.4">
-        <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/junit/jupiter/junit-jupiter/5.4.2/junit-jupiter-5.4.2.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/junit/jupiter/junit-jupiter-api/5.4.2/junit-jupiter-api-5.4.2.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/apiguardian/apiguardian-api/1.0.0/apiguardian-api-1.0.0.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/opentest4j/opentest4j/1.1.1/opentest4j-1.1.1.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/junit/platform/junit-platform-commons/1.4.2/junit-platform-commons-1.4.2.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/junit/jupiter/junit-jupiter-params/5.4.2/junit-jupiter-params-5.4.2.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/junit/jupiter/junit-jupiter-engine/5.4.2/junit-jupiter-engine-5.4.2.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/junit/platform/junit-platform-engine/1.4.2/junit-platform-engine-1.4.2.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-  </component>
-</module>
+package sk.uniza.fri;
+
+import java.io.*;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: PC1
+ * Date: 2022-05-17
+ * Time: 1:54 a.m.
+ * AUTHOR: UNIZA_FRI_5ZYI27_MATEJ_DZIABA
+ */
+
+public class Main {
+
+    public static void main(String[] args) throws IOException {
+
+        Primarna_Heuristika_MAXCENA heuristika = new Primarna_Heuristika_MAXCENA(500, 350, 10500);
+        //System.out.println("Hello world");
+        heuristika.VypisBatoh();
+
+        System.out.println("******************************************************************");
+        System.out.println("       VYSLEDOK hľadanie najlepšieho prípustného riešienia:       ");
+        System.out.println("CENA BATOHU: " + heuristika.getAktualna_hodnota_Batoha());
+        System.out.println("VAHA BATOHU: " + heuristika.getAktualna_vaha_Batoha());
+        System.out.println("POCET PRVKOV BATOHU: " + heuristika.getAktualny_pocet_prvkov_Batoha());
+        System.out.println("******************************************************************");
+
+    }
+}
+
+public class Primarna_Heuristika_MAXCENA {
+
+    private final int [][] pole;
+    private final int N;         // pocet predmetov   // 500
+    private final int R;         // obmedzeny pocet predmetov v batohu  // 350
+    private final int K;       // kapacita batohu  // 10500
+
+
+    private int aktualna_pocet_prvkov_Batoha = 0;
+    private int aktualna_vaha_Batoha = 0;
+    private int aktualna_hodnota_Batoha = 0;
+
+    public Primarna_Heuristika_MAXCENA (int n, int r, int k) throws IOException  // parametre - maximalny pocet riadkov a stlpcov matice
+    {
+        this.N = n;
+        this.R = r;
+        this.K = k;
+
+        this.pole = new int [2][this.R];
+        this.NaplnBatoh("C:\\Users\\PC1\\Desktop\\H2_a.txt", "C:\\Users\\PC1\\Desktop\\H2_c.txt");
+        this.ZapisBatohuDoSuboru("C:\\Users\\PC1\\Desktop\\H_02_cena.txt", "C:\\Users\\PC1\\Desktop\\H_02_vaha.txt");
+
+    }
+
+
+    /// <summary> Nacita udaje, naplni pomocny batoh, naplni batoh </summary>
+    /// <returns> --- </returns>
+    /// <remarks> ---. </remarks>
+    private void NaplnBatoh(String nazovSuboru1, String nazovSuboru2) throws java.io.FileNotFoundException {
+        java.util.Scanner scanner1 = new java.util.Scanner(new FileInputStream(nazovSuboru1));
+        java.util.Scanner scanner2 = new java.util.Scanner(new FileInputStream(nazovSuboru2));
+
+        int[][] pole_pom = new int[2][this.N];
+        int lok_max_cena = 0;
+        int lok_max_cena_index = 0;
+        int lok_max_vaha = 0;
+        int lok_max_vaha_index = 0;
+
+
+        // naplnim pomocny batoh
+        this.Napln_Pom_Batoh(scanner1, scanner2, pole_pom);
+
+        // naplnim SAMOTNY BATOH
+        this.NAPLN(pole_pom, lok_max_cena, lok_max_cena_index, lok_max_vaha, lok_max_vaha_index);
+
+        scanner1.close();
+        scanner2.close();
+    }
+
+    /// <summary> Naplni batoh, najde aktualne maximum v pomocnom batohu, ak najde, tak
+    // </summary> naplni batoh podla zadanych podmienok
+    /// <returns> --- </returns>
+    /// <remarks> ---. </remarks>
+    private void NAPLN(int[][] pole_pom, int lok_max_cena, int lok_max_cena_index, int lok_max_vaha, int lok_max_vaha_index) {
+        for (int j = 0; j < this.R; j++) {
+
+            // Najdem Maximum v pomocnom poli, priradim cenu a vahu do pom parametrov, potom ich extractnem
+            for (int i = 0; i < this.N; i++) {
+                if (pole_pom[0][i] > lok_max_cena) { // ak je cena vacsia, tak priradi to max v celom pomBatohu
+                    lok_max_cena = pole_pom[0][i];
+                    lok_max_cena_index = i;
+                    lok_max_vaha = pole_pom[1][i];
+                    lok_max_vaha_index = i;
+                }
+            }
+            pole_pom[0][lok_max_cena_index] = 0;   // extractnem item
+            pole_pom[1][lok_max_vaha_index] = 0;   // extractnem item
+
+
+            //  AK SOM NASIEL, a ak nepresahuje kapacitu batoha, pocet prvkov
+            //  TAK pridam prvok do batohu, teda zvysim !POCET_PRVKOV!, !VAHU! a !HODNOTU_BATOHA!
+            if (this.aktualna_pocet_prvkov_Batoha < this.R
+                    && this.aktualna_vaha_Batoha + lok_max_vaha < this.K
+                    && lok_max_cena > 0
+                    && lok_max_vaha > 0)
+            {
+                this.pole[0][j] = lok_max_cena;
+                this.pole[1][j] = lok_max_vaha;
+                this.aktualna_hodnota_Batoha += lok_max_cena;
+                this.aktualna_vaha_Batoha += lok_max_vaha;
+                this.aktualna_pocet_prvkov_Batoha++;
+            }
+
+            // extract pom parametrov
+            lok_max_cena = 0;
+            lok_max_vaha = 0;
+        }
+    }
+
+
+    // </summary> Naplni pomocny batoh
+    /// <returns> --- </returns>
+    /// <remarks> ---. </remarks>
+    private void Napln_Pom_Batoh(java.util.Scanner citac1, java.util.Scanner citac2, int[][] pole_pom) {
+        for (int i = 0; i < this.N; i++) {    // v prvom riadku su ceny, v druhom je vaha danych itemov
+            pole_pom[0][i] = citac1.nextInt();   // ceny
+            pole_pom[1][i] = citac2.nextInt();   // vaha
+        }
+    }
+
+
+    // </summary> Vypis aktualnych zloziek batohu
+    /// <returns> --- </returns>
+    /// <remarks> ---. </remarks>
+    public void VypisBatoh() {
+        System.out.println("******************************************************************");
+        System.out.println("                      ZLOZKY BATOHU                         ");
+        System.out.print("c(j) : ");
+
+        for (int i = 0; i < this.R; i++) {  // do 350
+            if (this.pole[0][i] != 0) {
+                System.out.print(this.pole[0][i] + " ");
+                if (this.pole[0][i] < 10
+                        && this.pole[0][i] != 0) {
+                    System.out.print(" ");
+                }
+            }
+        }
+
+        System.out.println(" ");
+        System.out.print("z(j) : ");
+        for (int i = 0; i < this.R; i++) {  // do 350
+            if(this.pole[1][i] != 0) {
+                System.out.print(this.pole[1][i] + " ");
+                if (this.pole[1][i] < 10)  {
+                    System.out.print(" ");
+                }
+            }
+        }
+        System.out.println(" ");
+        System.out.println("******************************************************************");
+    }
+
+    public void ZapisBatohuDoSuboru(String nazovSuboru1, String nazovSuboru2) throws IOException {
+        PrintWriter writer_cena = new PrintWriter(nazovSuboru1);
+        PrintWriter writer_vaha = new PrintWriter(nazovSuboru2);
+
+        for (int i = 0; i < this.R; i++) {
+            if (this.pole[0][i] != 0
+                    && this.pole[1][i] != 0) {
+                writer_cena.println(this.pole[0][i]);
+                writer_vaha.println(this.pole[1][i]);
+            }
+
+        }
+
+        writer_cena.close();
+        writer_vaha.close();
+    }
+
+    // </summary> Vrati aktualny pocet prvkov
+    /// <returns> int prvkov </returns>
+    /// <remarks> ---. </remarks>
+    public int getAktualny_pocet_prvkov_Batoha() {
+        return this.aktualna_pocet_prvkov_Batoha;
+    }
+
+
+    // </summary> Vrati aktualnu vahu
+    /// <returns> int vaha </returns>
+    /// <remarks> ---. </remarks>
+    public int getAktualna_vaha_Batoha() {
+        return this.aktualna_vaha_Batoha;
+    }
+
+
+    // </summary> Vrati aktualnu cenu batoha
+    /// <returns> int cenu </returns>
+    /// <remarks> ---. </remarks>
+    public int getAktualna_hodnota_Batoha() {
+        return this.aktualna_hodnota_Batoha;
+    }
+
+}

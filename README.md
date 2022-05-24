@@ -1,6 +1,6 @@
 ### Hi there 👋
 
-- 👋 Hi, I’m @MatejDziaba
+- I’m @MatejDziaba
 - 👀 I’m interested on objective programming in C++, Java
 -    also database in SQL developer
 - 🌱 I’m currently learning C++, Java, SQL developer

@@ -1,0 +1,223 @@
+package sk.uniza.fri.algoritmy;
+
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.Scanner;
+
+
+public class LabelSet {
+    //private final int nekonecno = 9999;
+
+    private final int n; // pocet vrcholov grafu
+    private final int m; // pocet hran grafu
+    private final int[][] h; // pole udajov o hranach
+
+    private final int nekonecno = 9999;
+
+    private int[][] X;
+    private int[][] C;
+
+    private int u;
+    private int v;
+
+    public LabelSet(int pocetVrcholov, int pocetHran) {
+        this.n = pocetVrcholov;
+        this.m = pocetHran;
+        this.h = new int[1 + this.m][3];
+        this.C = new int[this.n + 1][this.n + 1];
+        this.X = new int[this.n + 1][this.n + 1];
+    }
+
+    /*
+    Nacitanie grafu zo suboru:
+    Na kazdom riadku su tri cisla, prve a druhe cislo su cisla vrcholov
+    a tretie cislo je ohodnotenie hrany.
+    Pocet vrcholov aj pocet hran sa urci automaticky. Pocet hran je rovny
+    poctu riadkov v subore a pocet vrcholov je rovny najvacsiemu cislu
+    vrcholu v udajoch o hranach.
+    */
+    public static LabelSet nacitajSubor(String nazovSuboru) throws FileNotFoundException {
+
+        // otvorim subor a pripravim Scanner pre nacitavanie
+        Scanner scanner = new Scanner(new FileInputStream(nazovSuboru) {
+        });
+
+        // najskor len zistim pocet vrcholov a pocet hran
+        int pocetVrcholov = 1;
+        int pocetHran = 0;
+
+        // prejdem cely subor
+        while (scanner.hasNext()) {
+            // nacitam udaje o hrane
+            int u = scanner.nextInt();
+            int v = scanner.nextInt();
+            int c = scanner.nextInt();
+
+            // nacital som hranu, zvysim ich pocet o 1
+            pocetHran++;
+
+            // skontrolujem, ci netreba zvysit pocet vrcholov
+            if (pocetVrcholov < u) {
+                pocetVrcholov = u;
+            }
+            if (pocetVrcholov < v) {
+                pocetVrcholov = v;
+            }
+        }
+        // ukoncim nacitavanie zo suboru
+        scanner.close();
+
+        // vytvorim objekt grafu s potrebnym poctom vrcholo v aj hran
+        LabelSet g = new LabelSet(pocetVrcholov, pocetHran);
+
+        // po druhy krat otvorim ten isty subor,
+        // uz poznam pocet vrcholov aj hran a mam alokovanu pamat
+        scanner = new Scanner(new FileInputStream(nazovSuboru));
+
+        // postune nacitam vsetky hrany
+        // tentokrat si ich uz budem aj ukladat do pamate
+        for (int j = 1; j <= pocetHran; j++) {
+            int u = scanner.nextInt();
+            int v = scanner.nextInt();
+            int c = scanner.nextInt();
+
+            g.h[j][0] = u;
+            g.h[j][1] = v;
+            g.h[j][2] = c;
+        }
+
+        return g;
+    }
+
+    public void printInfo() {
+
+        System.out.println("Pocet vrcholov: " + this.n);
+        System.out.println("Pocet hran: " + this.m);
+
+        System.out.println("G=(V,H)");
+
+        System.out.print("V={");
+
+        for (int i = 1; i <= this.n; i++) {
+            if (i == 1) {
+                System.out.print("" + i);
+            } else {
+                System.out.print("," + i);
+            }
+        }
+        System.out.println("}");
+
+        System.out.print("H={");
+        for (int j = 1; j <= this.m; j++) {
+            if (j > 1) {
+                System.out.print(",");
+            }
+            System.out.print("(" + this.h[j][0] + "," + this.h[j][1] + ") " + this.h[j][2]);
+        }
+        System.out.println("}");
+    }
+
+    public void labelSet(int u, int v) {
+
+        // KROK 1 Inicializacia
+        int t[] = new int[this.n + 1];
+        int x[] = new int[this.n + 1];
+
+        for (int i = 1; i < t.length; i++) {
+            if (i == u) {
+                t[u] = 0;
+            } else {
+                t[i] = this.nekonecno;
+                x[i] = 0;
+            }
+        }
+
+        ArrayList<Integer> epsilon = new ArrayList<>();
+        epsilon.add(u);
+
+        // KROK 2 Vyber ...
+        do {
+            int r;
+            r = dajNovyVrchol(t, epsilon);
+
+            if (r == v) {
+                break;
+            }
+
+            epsilon.remove((Integer)r);
+
+            for (int i = 1; i < h.length; i++) {
+                if (h[i][0] == r) {
+                    int novaCesta = t[r] + h[i][2];
+                    if (novaCesta < t[h[i][1]]) {
+                        t[h[i][1]] = novaCesta;
+                        x[h[i][1]] = r;
+                        epsilon.add(h[i][1]);
+                    }
+                }
+            }
+
+            // Krok 3 opakovanie ak epsilon != 0, tak Krok 2
+        } while (epsilon.size() > 0);
+
+        // cesta
+        hladanieCesty(u, v, t, x);
+    }
+
+    private void hladanieCesty(int u, int v, int[] t, int[] x) {
+
+        if (t[v] == this.nekonecno) {
+            System.out.println("Neexistuje dana cesta z u do v");
+        } else {
+            ArrayList<Integer> zoznamVysledkov = new ArrayList<>();
+            int aktualny = v;
+            while (aktualny != u) {
+                zoznamVysledkov.add(aktualny);
+                aktualny = x[aktualny];
+            }
+            zoznamVysledkov.add(u);
+
+            // otocenie cesty
+            int[] otocene = otocenieCesty(zoznamVysledkov);
+
+            System.out.print("Dlzka je: ");
+            System.out.println(t[v]);
+            System.out.print("Cesta je: ");
+
+            for (int i = 0; i < otocene.length; i++) {
+                if (i != otocene.length - 1) {
+                    System.out.print(otocene[i] + "(" + otocene[i] + "," + otocene[i + 1] + ")");
+                }
+            }
+            System.out.println(v);
+        }
+    }
+
+    private int[] otocenieCesty(ArrayList<Integer> zoznamVysledkov) {
+        int[] otocene = new int[zoznamVysledkov.size()];
+        for (int i = 0; i < zoznamVysledkov.size(); i++) {
+            otocene[zoznamVysledkov.size() - 1 - i] = zoznamVysledkov.get(i);
+        }
+        return otocene;
+    }
+
+    public int dajNovyVrchol(int[] t, ArrayList<Integer> epsilon1) {
+        int minimum = this.nekonecno;
+        int vrchol = -1;
+
+        for (Integer integer: epsilon1) {
+            if (t[integer] < minimum) {
+                minimum = t[integer];
+                vrchol = integer;
+            }
+        }
+
+        return vrchol;
+    }
+
+    private enum Znacka {
+        TRVALA,
+        DOCASNA;
+    }
+}

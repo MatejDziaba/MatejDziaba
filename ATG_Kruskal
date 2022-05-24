@@ -1,0 +1,191 @@
+package sk.uniza.fri.algoritmy;
+
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Scanner;
+
+
+public class Kruskal {
+
+    private final int n; // pocet vrcholov grafu
+    private final int m; // pocet hran grafu
+    private final int[][] h; // pole udajov o hranach
+
+    //private final int nekonecno = 9999;
+
+    public Kruskal(int pocetVrcholov, int pocetHran) {
+        this.n = pocetVrcholov;
+        this.m = pocetHran;
+        this.h = new int[1 + this.m][3];
+    }
+
+    /*
+    Nacitanie grafu zo suboru:
+    Na kazdom riadku su tri cisla, prve a druhe cislo su cisla vrcholov
+    a tretie cislo je ohodnotenie hrany.
+    Pocet vrcholov aj pocet hran sa urci automaticky. Pocet hran je rovny
+    poctu riadkov v subore a pocet vrcholov je rovny najvacsiemu cislu
+    vrcholu v udajoch o hranach.
+    */
+    public static Kruskal nacitajSubor(String nazovSuboru) throws FileNotFoundException {
+
+        // otvorim subor a pripravim Scanner pre nacitavanie
+        Scanner scanner = new Scanner(new FileInputStream(nazovSuboru) {
+        });
+
+        // najskor len zistim pocet vrcholov a pocet hran
+        int pocetVrcholov = 1;
+        int pocetHran = 0;
+
+        // prejdem cely subor
+        while (scanner.hasNext()) {
+            // nacitam udaje o hrane
+            int u = scanner.nextInt();
+            int v = scanner.nextInt();
+            int c = scanner.nextInt();
+
+            // nacital som hranu, zvysim ich pocet o 1
+            pocetHran++;
+
+            // skontrolujem, ci netreba zvysit pocet vrcholov
+            if (pocetVrcholov < u) {
+                pocetVrcholov = u;
+            }
+            if (pocetVrcholov < v) {
+                pocetVrcholov = v;
+            }
+        }
+        // ukoncim nacitavanie zo suboru
+        scanner.close();
+
+        // vytvorim objekt grafu s potrebnym poctom vrcholo v aj hran
+        Kruskal g = new Kruskal(pocetVrcholov, pocetHran);
+
+        // po druhy krat otvorim ten isty subor,
+        // uz poznam pocet vrcholov aj hran a mam alokovanu pamat
+        scanner = new Scanner(new FileInputStream(nazovSuboru));
+
+        // postune nacitam vsetky hrany
+        // tentokrat si ich uz budem aj ukladat do pamate
+        for (int j = 1; j <= pocetHran; j++) {
+            int u = scanner.nextInt();
+            int v = scanner.nextInt();
+            int c = scanner.nextInt();
+
+            g.h[j][0] = u;
+            g.h[j][1] = v;
+            g.h[j][2] = c;
+        }
+
+        return g;
+    }
+
+    public void printInfo() {
+
+        System.out.println("Pocet vrcholov: " + this.n);
+        System.out.println("Pocet hran: " + this.m);
+
+        System.out.println("G=(V,H)");
+
+        System.out.print("V={");
+
+        for (int i = 1; i <= this.n; i++) {
+            if (i == 1) {
+                System.out.print("" + i);
+            } else {
+                System.out.print("," + i);
+            }
+        }
+        System.out.println("}");
+
+        System.out.print("H={");
+        for (int j = 1; j <= this.m; j++) {
+            if (j > 1) {
+                System.out.print(",");
+            }
+            System.out.print("{" + this.h[j][0] + "," + this.h[j][1] + "} " + this.h[j][2]);
+        }
+        System.out.println("}");
+    }
+
+    public void kruskal() {
+        // Krok 1 Zoradenie hran podla ohodnotenia
+        this.zoradHrany();
+        ArrayList<int[]> zoznamVysledkov = new ArrayList<>();
+
+        // Krok 2 poloz k(i) = i.
+        int[] k = new int[this.n + 1];
+        for (int i = 1; i < this.n + 1; i++) {    // vytvarame znacky
+            k[i] = i;
+        }
+
+
+        ArrayList<int[]> zoznamHran = new ArrayList<>(Arrays.asList(this.h));   // nalpni zoznam, prave hranami
+                                                                                // kvoli mazaniu
+        // Krok 3
+        do {
+            int[] aktualnaHrana = zoznamHran.get(0);   // zaciname prvou hranou
+            zoznamHran.remove(0);
+
+            if (k[aktualnaHrana[0]] != k[aktualnaHrana[1]]) {             // ak su znacky pri sebe rovnake tak ich nepouzivame
+                zoznamVysledkov.add(aktualnaHrana);
+
+                int max = k[aktualnaHrana[1]];                  // hladanie znacky mensej
+                if (max < k[aktualnaHrana[0]]) {
+                    max = k[aktualnaHrana[0]];
+                }
+
+                int min = k[aktualnaHrana[0]];
+                if (min > k[aktualnaHrana[1]]) {
+                    min = k[aktualnaHrana[1]];
+                }
+
+                for (int i = 1; i < this.n + 1; i++) {             // prepisanie vacsej, mensim
+                    if (k[i] == max) {
+                        k[i] = min;
+                    }
+                }
+            }
+            // Krok 4
+        } while (zoznamVysledkov.size() < this.n - 1 && !zoznamHran.isEmpty());
+
+        if (zoznamVysledkov.size() == this.n - 1) {
+            int cena = 0;
+            for (int i = 0; i < zoznamVysledkov.size(); i++) {
+                System.out.printf("%d %d %d \n",
+                        zoznamVysledkov.get(i)[0], zoznamVysledkov.get(i)[1], zoznamVysledkov.get(i)[2]);
+                cena += zoznamVysledkov.get(i)[2];
+            }
+            System.out.println("cena je: " + cena);
+        } else {
+            System.out.println("Graf nie je suvisly!");
+        }
+    }
+
+    public void zoradHrany() {
+        for (int i = 1; i <= this.m; i++) {
+
+            for (int j = i + 1; j <= this.m; j++) {
+
+                if (this.h[j][2] < this.h[i][2]) {
+
+                    int tmp;
+                    tmp = this.h[j][0];
+                    this.h[j][0] = this.h[i][0];
+                    this.h[i][0] = tmp;
+
+                    tmp = this.h[j][1];
+                    this.h[j][1] = this.h[i][1];
+                    this.h[i][1] = tmp;
+
+                    tmp = this.h[j][2];
+                    this.h[j][2] = this.h[i][2];
+                    this.h[i][2] = tmp;
+
+                }
+            }
+        }
+    }
+}
